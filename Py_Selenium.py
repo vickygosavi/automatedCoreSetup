@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import messagebox
-from tkinter import filedialog
+from tkinter import filedialog,ttk
 #import tkinter
 #from typing_extensions import ParamSpecKwargs
 import selenium.webdriver
@@ -18,6 +18,10 @@ from openpyxl import *
 import os
 import sys
 import xlwings as xw
+import pandas as pd
+
+#from Run_Macro import Load_excel_data
+
 
 
 '''
@@ -84,6 +88,8 @@ Grade_in_designation = "D:/Import Files/Grade in Designation.csv"
 # --------------------------------------- functions -------------------------------------
 # --------------------------------- xlwings to run macro -------------------------------
 
+# To open a dialog box and store selected file
+
 def select_file():
     filetypes = (
         ('text files', '*.txt'),
@@ -97,6 +103,64 @@ def select_file():
         initialdir='/',
         filetypes=filetypes)
 
+# --------------------- access macro - Error check & Generate error --------------------
+
+def run_excel_macro_validation():
+    
+    '''To run validation macro'''
+        
+    try:
+        xl_app = xw.App(visible=False, add_book=False)
+        wb = xl_app.books.open(filename1)
+
+        #To check errors
+        run_macro1 = wb.app.macro('CheckErrors.CheckforErrors') 
+
+        #To generate Err report
+        run_macro2 = wb.app.macro('Error_Report.Error_Report') 
+
+        run_macro1()
+        run_macro2()
+
+        wb.save()
+        wb.close()
+
+        xl_app.quit()
+
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
+        print(message)
+        
+
+
+# --------------------- access macro - Errors resolved ------------------------------
+
+def run_validation_Allresolved_macro():
+    
+    '''To run validation macro'''
+        
+    try:
+        xl_app = xw.App(visible=False, add_book=False)
+        wb = xl_app.books.open(filename1)
+
+        # To resolve errors
+        run_macro3 = wb.app.macro('CheckErrors.ResolvedAllErrors')
+
+        run_macro3()
+
+        wb.save()
+        wb.close()
+
+        xl_app.quit()
+
+    except Exception as ex:
+        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+        message = template.format(type(ex).__name__, ex.args)
+        print(message)
+
+
+# --------------------- access macro - To create core exports --------------------
 
 def run_excel_macro():
     """
@@ -121,6 +185,81 @@ def run_excel_macro():
         template = "An exception of type {0} occurred. Arguments:\n{1!r}"
         message = template.format(type(ex).__name__, ex.args)
         print(message)
+
+# ------------------------------------- Tree view for Error report -------------------------------------------
+
+def EntireTree():
+
+    global root2
+    root2 = tk.Tk()
+
+    root2.geometry("850x650") # set the root2 dimensions
+
+    #Frame for TreeView
+    global frame1
+    frame1 = tk.LabelFrame(root2, text="Excel Data")
+    frame1.place(height=500, width=800,rely=0, relx=0.02)
+
+
+    button2 = tk.Button(root2, text="Load File", command=lambda: Load_excel_data())
+    button2.place(rely=0.80, relx=0.20)
+
+    # The file/file path text
+    global label_file
+    label_file = ttk.Label(root2, text="No File Selected")
+    label_file.place(rely=0.90, relx=0.45)
+
+
+    ## Treeview Widget
+    global tv1
+    tv1 = ttk.Treeview(frame1)
+    tv1.place(relheight=1, relwidth=1) # set the height and width of the widget to 100% of its container (frame1).
+
+    treescrolly = tk.Scrollbar(frame1, orient="vertical", command=tv1.yview) # command means update the yaxis view of the widget
+    treescrollx = tk.Scrollbar(frame1, orient="horizontal", command=tv1.xview) # command means update the xaxis view of the widget
+    tv1.configure(xscrollcommand=treescrollx.set, yscrollcommand=treescrolly.set) # assign the scrollbars to the Treeview Widget
+    treescrollx.pack(side="bottom", fill="x") # make the scrollbar fill the x axis of the Treeview widget
+    treescrolly.pack(side="right", fill="y") # make the scrollbar fill the y axis of the Treeview widget
+
+    root2.mainloop()
+
+# -------------------------- Functions which are being used inside EntireTree function -----------------------------------
+
+def Load_excel_data():
+    """If the file selected is valid this will load the file into the Treeview"""
+    #file_path = label_file["text"]
+    try:
+        excel_filename = r"{}".format(filename1)
+        if excel_filename[-4:] == ".csv":
+            df = pd.read_csv(excel_filename)
+        else:
+            df = pd.read_excel(excel_filename,sheet_name='Error_Report')
+        
+
+    except ValueError:
+        tk.messagebox.showerror("Information", "The file you have chosen is invalid")
+        return None
+    except FileNotFoundError:
+        tk.messagebox.showerror("Information", f"No such file as {filename1}")
+        return None
+
+    clear_data()
+    tv1["column"] = list(df.columns)
+    tv1["show"] = "headings"
+    for column in tv1["columns"]:
+        tv1.heading(column, text=column) # let the column heading = column name
+
+    df_rows = df.to_numpy().tolist() # turns the dataframe into a list of lists
+    for row in df_rows:
+        tv1.insert("", "end", values=row) # inserts each list into the treeview. For parameters see https://docs.python.org/3/library/tkinter.ttk.html#tkinter.ttk.Treeview.insert
+    return None
+
+
+def clear_data():
+    tv1.delete(*tv1.get_children())
+    return None
+
+
 
 # ---------------------------------- OpenpyXl to loop through Band names ----------------------------------
 
@@ -150,6 +289,9 @@ try:
 
 except:
     pass
+
+
+
 
 driver = None
 global relative_path
@@ -198,6 +340,7 @@ def on_close():
         driver = None
 
 
+
 def UserLogin ():
 
     global driver
@@ -207,8 +350,10 @@ def UserLogin ():
     driver.find_element_by_id("UserLogin_password").send_keys(password1.get())
     driver.find_element_by_id("login-submit").click()
     driver.implicitly_wait(10)
+    
 
     # How are you feeling today?
+
     try:
         driver.find_element_by_xpath('//*[@id="pulse_form"]/div/div/div')
         driver.find_element_by_xpath('//*[@id="5"]').click()
@@ -760,6 +905,7 @@ InfoForTHeUser ="Please make sure that you have used the Automated DCT to take t
 driver = None
 
 root  = tk.Tk()
+#new_root = tk.Tk()
 
 #Logo = resource_path("Logo.png")
 # Logo url -> share point public (vis for eve in org)
@@ -780,94 +926,101 @@ UserGCQuestion = messagebox.askyesno(title="Group company",message="Do you want 
 
 if UserGCQuestion == True :
 
-    tk.Label(root,text="Client Instance / Website link ->").grid(row=3,column=1,padx=10,pady=5)
+    tk.Label(root,text="Client Instance / Website link ->",width=25).grid(row=3,column=1,padx=10,pady=5)
     WebLink = StringVar()
     name1 = tk.Entry(root, textvariable=WebLink,width=30)
     name1.grid(row=3,column=2,padx=5,pady=5)
 
-    tk.Label(root,text="User ID / Email ID ->",activebackground='white').grid(row=3,column=3,padx=10,pady=5)
+    tk.Label(root,text="User ID / Email ID ->",activebackground='white',width=25).grid(row=3,column=3,padx=10,pady=3)
     username1 = StringVar()
     name2 = tk.Entry(root, textvariable=username1,width=30)
-    name2.grid(row=3,column=4,padx=5,pady=5)
+    name2.grid(row=3,column=4,padx=5,pady=3)
 
-    tk.Label(root,text="Password ->").grid(row=4,column=1,padx=10,pady=5)
+    tk.Label(root,text="Password ->",width=25).grid(row=4,column=1,padx=10,pady=3)
     password1 = StringVar()
     name3 = tk.Entry(root, textvariable=password1,show="*",width=30)
-    name3.grid(row=4,column=2,padx=5,pady=10)
+    name3.grid(row=4,column=2,padx=5,pady=3)
 
-    tk.Label(root,text="GC Name ->").grid(row=4,column=3,padx=10,pady=5)
+    tk.Label(root,text="GC Name ->",width=25).grid(row=4,column=3,padx=10,pady=3)
     GC_name = StringVar()
     name4 = tk.Entry(root, textvariable=GC_name,width=30)
-    name4.grid(row=4,column=4,padx=5,pady=10)
+    name4.grid(row=4,column=4,padx=5,pady=3)
 
-    tk.Label(root,text="GC Shortname ->").grid(row=5,column=1,padx=10,pady=5)
+    tk.Label(root,text="GC Shortname ->",width=25).grid(row=5,column=1,padx=10,pady=3)
     GC_shortName1 = StringVar()
     name6 = tk.Entry(root, textvariable=GC_shortName1,width=30)
-    name6.grid(row=5,column=2,padx=5,pady=10)
+    name6.grid(row=5,column=2,padx=5,pady=3)
 
-    tk.Label(root,text="GC Country ->").grid(row=5,column=3,padx=10,pady=5)
+    tk.Label(root,text="GC Country ->",width=25).grid(row=5,column=3,padx=10,pady=3)
     GC_country1 = StringVar()
     name6 = tk.Entry(root, textvariable=GC_country1,width=30)
-    name6.grid(row=5,column=4,padx=5,pady=10)
+    name6.grid(row=5,column=4,padx=5,pady=3)
 
-    tk.Label(root,text="GC State ->").grid(row=6,column=1,padx=10,pady=5)
+    tk.Label(root,text="GC State ->",width=25).grid(row=6,column=1,padx=10,pady=3)
     GC_State1 = StringVar()
     name7 = tk.Entry(root, textvariable=GC_State1,width=30)
-    name7.grid(row=6,column=2,padx=5,pady=10)
+    name7.grid(row=6,column=2,padx=5,pady=3)
 
-    tk.Label(root,text="GC City ->").grid(row=6,column=3,padx=10,pady=5)
+    tk.Label(root,text="GC City ->",width=25).grid(row=6,column=3,padx=10,pady=3)
     GC_city1 = StringVar()
     name8 = tk.Entry(root, textvariable=GC_city1,width=30)
-    name8.grid(row=6,column=4,padx=5,pady=10)
+    name8.grid(row=6,column=4,padx=5,pady=3)
 
     
 else :
  
-    tk.Label(root,text="Client Instance / Website link ->").grid(row=3,column=1,padx=10,pady=10)
+    tk.Label(root,text="Client Instance / Website link ->",width=20).grid(row=3,column=1,padx=10,pady=10)
     WebLink = StringVar()
-    name1 = tk.Entry(root, textvariable=WebLink,width=92)
+    name1 = tk.Entry(root, textvariable=WebLink,width=100)
     name1.grid(row=3,column=2,padx=5,pady=10,columnspan=3)
 
-    tk.Label(root,text="User ID / Email ID ->",activebackground='white').grid(row=4,column=1,padx=10,pady=5)
+    tk.Label(root,text="User ID / Email ID ->",activebackground='white',width=20).grid(row=4,column=1,padx=10,pady=5)
     username1 = StringVar()
     name2 = tk.Entry(root, textvariable=username1,width=35)
     name2.grid(row=4,column=2,padx=5,pady=10)
 
-    tk.Label(root,text="Password ->").grid(row=4,column=3,padx=10,pady=5)
+    tk.Label(root,text="Password ->",width=20).grid(row=4,column=3,padx=10,pady=5)
     password1 = StringVar()
     name3 = tk.Entry(root, textvariable=password1,show="*",width=35)
     name3.grid(row=4,column=4,padx=5,pady=10)
     
 
 CheckBox_Contribution_var = IntVar()
-CheckBox_Contribution1 = tk.Checkbutton(root, text="Is Contribution level applicable ?", variable=CheckBox_Contribution_var, onvalue=1, offvalue=0,activebackground='blue').grid(row=7,column=1,padx=10,pady=15,columnspan=2)
+CheckBox_Contribution1 = tk.Checkbutton(root, text="Is Contribution level applicable ?", variable=CheckBox_Contribution_var, onvalue=1, offvalue=0,activebackground='blue').grid(row=7,column=1,padx=10,pady=5,columnspan=2)
 
 CheckBox_Joblevel_var= IntVar()
-CheckBox_Job3 = tk.Checkbutton(root, text="Is job level applicable ?", variable=CheckBox_Joblevel_var, onvalue=1, offvalue=0,activebackground='blue').grid(row=7,column=3,padx=10,pady=15,columnspan=2)
+CheckBox_Job3 = tk.Checkbutton(root, text="Is job level applicable ?", variable=CheckBox_Joblevel_var, onvalue=1, offvalue=0,activebackground='blue').grid(row=7,column=3,padx=10,pady=5,columnspan=2)
 
-b9 = tk.Label(root,text="*** Please provide all the inputs ***",width=110).grid(row=8,column=1,padx=10,pady=15,columnspan=4)
+b1 = tk.Label(root,text="*** Please provide all the inputs ***",width=110,background='#5252ff').grid(row=8,column=1,padx=10,pady=10,columnspan=4)
 
-b11 = b10 = tk.Button(root, text='Select file', command=select_file,width=40,relief=RAISED,activebackground='Grey',background='black',fg='white').grid(row=9,column=1,padx=10,pady=5,columnspan=4)
+b2 = tk.Button(root, text='Select file', command=select_file,width=40,relief=RAISED,activebackground='Grey',background='#285DC0',fg='white').grid(row=9,column=1,padx=10,pady=5,columnspan=4)
+
+b10 = tk.Button(root, text='Check Errors', command=run_excel_macro_validation,width=40,relief=RAISED,activebackground='Grey',bg='#285DC0',fg='white').grid(row=10,column=1,padx=10,pady=5,columnspan=2)
+b11 = tk.Button(root, text='Show validation errors', command=EntireTree,width=40,relief=RAISED,activebackground='Grey',bg='#285DC0',fg='white').grid(row=10,column=3,padx=10,pady=5,columnspan=2)
+b12 = tk.Button(root, text='Resolve all errors', command=run_validation_Allresolved_macro,width=40,relief=RAISED,activebackground='Grey',bg='#285DC0',fg='white').grid(row=11,column=1,padx=10,pady=10,columnspan=4)
 
 #Validate data button -> validation ->Error report
 
-b10 = tk.Button(root, text='Generate Core Master Imports', command=run_excel_macro,width=40,relief=RAISED,activebackground='Grey',background='black',fg='white').grid(row=10,column=1,padx=10,pady=5,columnspan=4)
+b3 = tk.Button(root, text='Generate Core Master Imports', command=run_excel_macro,width=40,relief=RAISED,activebackground='Grey',background='black',fg='white').grid(row=12,column=1,padx=10,pady=5,columnspan=4)
 
-b8 = tk.Label(root,text="",background='#5252ff').grid(row=11,column=1,padx=10,pady=1,columnspan=4)
+b4 = tk.Label(root,text="",background='#5252ff').grid(row=13,column=1,padx=10,pady=1,columnspan=4)
  
-b1 = tk.Button(root, text='Chrome Open', command=on_open,width=40,relief=RAISED,activebackground='Grey').grid(row=12,column=1,padx=10,pady=5,columnspan=4)
+b5 = tk.Button(root, text='Chrome Open', command=on_open,width=40,relief=RAISED,activebackground='Grey').grid(row=14,column=1,padx=10,pady=5,columnspan=4)
 
-b2 = tk.Button(root, text='Login & Admin', command=UserLogin,width=40,relief=RAISED,activebackground='Grey').grid(row=13,column=1,padx=10,pady=5,columnspan=4)
+b6 = tk.Button(root, text='Login & Admin', command=UserLogin,width=40,relief=RAISED,activebackground='Grey').grid(row=15,column=1,padx=10,pady=5,columnspan=4)
 
 #b3 = tk.Button(root, text='Account details', command=GC_Details,width=40).grid(row=7,column=1,padx=10,pady=5,columnspan=3)
 
-b4 = tk.Button(root, text='Upload Files', command=Upload_file_1,width=40,relief=RAISED,activebackground='Grey').grid(row=14,column=1,padx=10,pady=5,columnspan=4)
+b7 = tk.Button(root, text='Upload Files', command=Upload_file_1,width=40,relief=RAISED,activebackground='Grey').grid(row=16,column=1,padx=10,pady=5,columnspan=4)
 
 #b5 = tk.Button(root, text='Upload File_2', command=upload_file_2,width=40).grid(row=9,column=1,padx=10,pady=5,columnspan=3)
 
-b6 = tk.Button(root, text='Chrome Close', command=on_close,width=40,relief=RAISED,activebackground='Grey').grid(row=15,column=1,padx=10,pady=5,columnspan=4)
+b8 = tk.Button(root, text='Chrome Close', command=on_close,width=40,relief=RAISED,activebackground='Grey').grid(row=17,column=1,padx=10,pady=5,columnspan=4)
 
-b7 = tk.Button(root, text='Help', command=Help_window,width=40,relief=RAISED,activebackground='Grey').grid(row=16,column=1,padx=10,pady=15,columnspan=4)
+b9 = tk.Button(root, text='Help', command=Help_window,width=40,relief=RAISED,activebackground='Grey').grid(row=18,column=1,padx=10,pady=15,columnspan=4)
+
+
+
 
 root.mainloop()
 
