@@ -20,9 +20,12 @@ import os
 import sys
 import xlwings as xw
 import pandas as pd
+import datetime as datetime
+from datetime import timedelta
+import threading
+import multiprocessing
 
 #from Run_Macro import Load_excel_data
-
 
 
 '''
@@ -271,6 +274,11 @@ def clear_data():
     return None
 
 
+def new_window_for_designation():
+
+    pass
+
+
 
 # ---------------------------------- OpenpyXl to loop through Band names ----------------------------------
 
@@ -302,15 +310,17 @@ except:
     pass
 
 
-
+#Time_Now = datetime.now()
 
 driver = None
 global relative_path
 
 # ------------- for Chromedriver, adjustment to add it in the exe --------------------
-# While testing it locally, ensure to download and save cromedriver.exe in path -> .../.../ driver / chromedriver.exe
 
 def resource_path1(relative_path):
+
+    global base_path
+
     try:
         base_path = sys.MEIPASS
     except Exception:
@@ -320,6 +330,9 @@ def resource_path1(relative_path):
 # -------------- for Image, adjustment to add it in the exe -------------------------
 
 def resource_path_logo(relative_path_logo):
+    
+    global base_path_logo
+    
     try:
         base_path_logo = sys._MEIPASS
         print(base_path_logo)
@@ -332,16 +345,21 @@ def resource_path_logo(relative_path_logo):
  #pyi-makespec Py_Selenium.py --onefile --noconsole --add-binary "driver\chromedriver.exe;driver\" --add-data "Img\Dbox4.png;Img\"  --name Core_DCT
  #pyinstaller --clean Core_DCT.spec  
 
+ #pyi-makespec Py_Selenium_Copy.py --onefile --noconsole --add-binary "driver\chromedriver.exe;driver\" --add-data "Img\Dbox4.png;Img\"  --name Core_DCT_demo_thread
+ #pyinstaller --clean Core_DCT_demo_thread.spec
 
 def on_open():
     global driver
+    global url
 
     if not driver:
         print(os.path.dirname(__file__))
         driver = selenium.webdriver.Chrome(resource_path1("/driver/chromedriver.exe"))
+        #driver2 = selenium.webdriver.Chrome(resource_path1("/driver/chromedriver.exe"))
         url = WebLink.get()
         driver.get(url)
         driver.maximize_window()
+        #driver2.minimize_window()
 
 
 def on_close():
@@ -781,83 +799,10 @@ def Upload_file_1():
     except:
         pass
 
-    #Designation
-
-    try:
-
-        driver.get(WebLink.get() + '/import/asyncImports/type/designation')
-        driver.find_element_by_xpath('//*[@id="upload_file[]"]').send_keys(Designation)
-        driver.implicitly_wait(20)
-        element = wait.until(EC.element_to_be_clickable(((By.NAME,'upload'))))
-        time.sleep(4)
-        driver.find_element_by_xpath('//*[@id="upload_import_file"]/div/input').click()
-        #driver.find_element_by_name('upload').click()
-        driver.implicitly_wait(20)
-
-    except:
-        pass
     
-    # Designation Name
-
-    try:
-
-        driver.get(WebLink.get() + '/import/asyncImports/type/designationname')
-        driver.find_element_by_xpath('//*[@id="upload_file[]"]').send_keys(Designation_name)
-        driver.implicitly_wait(20)
-        element = wait.until(EC.element_to_be_clickable(((By.NAME,'upload'))))
-        time.sleep(4)
-        driver.find_element_by_xpath('//*[@id="upload_import_file"]/div/input').click()
-        #driver.find_element_by_name('upload').click()
-        driver.implicitly_wait(20)
-
-    except:
-        pass
-
-
-    # Designation Location
-
-    try:
-
-        time.sleep(4)
-        driver.get(WebLink.get() + '/import/designationLocation')
-        driver.find_element_by_xpath('//*[@id="csvdata"]').send_keys(Designation_loc)
-        time.sleep(4)
-        driver.implicitly_wait(20)
-    #   element = wait.until(EC.element_to_be_clickable(((By.NAME,'upload')))) --- not required as this page doesnt have a submit or next button present
-
-    except:
-        pass
-
     #except:
         #pass
 
-    #------------------------------- code to select from Deignation's drop down ------------------------------------
-
-    try:
-
-        driver.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[1]/td[1]/select').send_keys(Dept)
-        driver.implicitly_wait(3)
-        driver.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[2]/td[1]/select').send_keys(Desg)
-        driver.implicitly_wait(3)
-        driver.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[3]/td[1]/select').send_keys(Desg_code)
-        driver.implicitly_wait(3)
-        driver.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[4]/td[1]/select').send_keys(Numb_of_position)
-        driver.implicitly_wait(3)
-        driver.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[8]/td[1]/select').send_keys(Not_period)
-        driver.implicitly_wait(3)
-        driver.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[10]/td[1]/select').send_keys(Funct_area)
-        time.sleep(2)
-
-        driver.execute_script("window.scrollTo(0, -500)") 
-
-        time.sleep(5)
-
-        driver.find_element_by_xpath('//*[@id="col_map"]/div/input').click()
-
-        time.sleep(5)
-
-    except:
-        pass
 
     # ----------------------- Aliases which was deleted earlier will be added again and saved ------------------------
 
@@ -903,9 +848,137 @@ def Upload_file_1():
     except:
         pass
 
+def upload_files2():
+
+    # ------------ Using driver2 to open Designation's import window parallely -------------
+    # Adding Login & admin code here again so that driver2 can access the designation page as an admin
+    # Adding 15 mins wait and later 
+    #Designation
+
+    global driver2
+
+    wait = WebDriverWait(driver, 30)
+    driver2 = selenium.webdriver.Chrome(resource_path1("/driver/chromedriver.exe"))
+
+    driver2.maximize_window()
+    url = WebLink1.get()
+    driver2.get(url)
+          
+    try:
+    # Admin's login
+        driver2.find_element_by_id("UserLogin_username").send_keys(username2.get())
+        driver2.find_element_by_id("UserLogin_password").send_keys(password2.get())
+        driver2.find_element_by_id("login-submit").click()
+        driver2.implicitly_wait(10)
+    except:
+        pass
+    
+
+    # How are you feeling today?
+
+    try:
+        driver2.find_element_by_xpath('//*[@id="pulse_form"]/div/div/div')
+        driver2.find_element_by_xpath('//*[@id="5"]').click()
+        driver2.find_element_by_xpath('//*[@id="plus-status-btn"]').click()
+    except:
+        pass
+
+    #Click on the user's profile pic and switch to admin
+    driver2.find_element_by_xpath('//*[@id="dasboard-bigheader"]/header/div[4]/ul/li[3]/div/div/img').click()
+    driver2.find_element_by_xpath('//*[@id="dasboard-bigheader"]/header/div[4]/ul/li[3]/div/ul/li[2]/a').click()
+    driver2.implicitly_wait(30)
+
+    time.sleep(5)
+
+    # Designation 
+    try:
+        driver2.get(WebLink1.get() + '/import/asyncImports/type/designation')
+        driver2.find_element_by_xpath('//*[@id="upload_file[]"]').send_keys(Designation)
+        
+        driver2.implicitly_wait(20)
+        
+        
+        time.sleep(4)
+        driver2.find_element_by_xpath('//*[@id="upload_import_file"]/div/input').click()
+    
+        #driver2.find_element_by_name('upload').click()
+        driver2.implicitly_wait(20)
+    except:
+        pass
+
+    
+
+    #code to select from Deignation's drop down
+
+    try:
+
+        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[1]/td[1]/select').send_keys(Dept)
+        driver2.implicitly_wait(3)
+        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[2]/td[1]/select').send_keys(Desg)
+        driver2.implicitly_wait(3)
+        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[3]/td[1]/select').send_keys(Desg_code)
+        driver2.implicitly_wait(3)
+        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[4]/td[1]/select').send_keys(Numb_of_position)
+        driver2.implicitly_wait(3)
+        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[8]/td[1]/select').send_keys(Not_period)
+        driver2.implicitly_wait(3)
+        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[10]/td[1]/select').send_keys(Funct_area)
+        time.sleep(2)
+
+        driver2.execute_script("window.scrollTo(0, -500)") 
+        time.sleep(5)
+
+        driver2.find_element_by_xpath('//*[@id="col_map"]/div/input').click()
+
+        messagebox.showinfo("Wait for 15 mins","Please do not close the chrome browser, executable is waiting for the designation to be saved (15mins pause)\r\n\r\nChrome window will get minimized automatically and after 15 mins of wait it will be maximised and then remaining CSVs will be uploaded.")
+
+        # messagebox.showinfo("Please wait","By "+start_min1.time()+" this will be uploaded on the instance Please do not close the chrome browser, \r\n\r\nChrome window will get minimized automatically and at"+start_min1.time() + " it will be maximised and then remaining CSVs will be uploaded.")
+
+        driver2.minimize_window()
+
+        time.sleep(960)
+
+        driver2.maximize_window()
+
+        time.sleep(5)
+
+    except:
+        pass
+
+    # Designation Name
+
+    try:
+
+        driver2.get(WebLink1.get() + '/import/asyncImports/type/designationname')
+        driver2.find_element_by_xpath('//*[@id="upload_file[]"]').send_keys(Designation_name)
+        driver2.implicitly_wait(20)
+        time.sleep(4)
+        driver2.find_element_by_xpath('//*[@id="upload_import_file"]/div/input').click()
+        #driver2.find_element_by_name('upload').click()
+        driver2.implicitly_wait(20)
+
+    except:
+        pass
+
+    # Designation Location
+
+    try:
+
+        time.sleep(4)
+        driver2.get(WebLink1.get() + '/import/designationLocation')
+        driver2.find_element_by_xpath('//*[@id="csvdata"]').send_keys(Designation_loc)
+        time.sleep(4)
+        driver2.implicitly_wait(20)
+    #   element = wait.until(EC.element_to_be_clickable(((By.NAME,'upload')))) --- not required as this page doesnt have a submit or next button present
+
+    except:
+        pass
+
+
+
 def Help_window():
     messagebox.showinfo(title="How to use this executable",message=InfoForTHeUser)
-    
+
 
 
 # --------------------------------------------------------------------------------------------------------------
@@ -914,131 +987,198 @@ def Help_window():
 
 InfoForTHeUser ="Please make sure that you have used the Automated DCT to take the export and the exported CSVs are present in 'D: Import files' folder. \r\n\r\nIf Client's GC information is added then kindly select 'No' or select 'Yes' if you want to change/update the GC info \r\n \r\n \r\n Some points to remeber -> \r\n\r\n 1. Please make sure that you are adding the entire instance link. that is make sure to include 'https://' also \r\n\r\n 2. Please add the correct user ID and Password \r\n\r\n 3. 'Delays' are added purposely so as to let the website load all its elements. \r\n\r\n 4. Please select Contribution and Job level checkboxes if you want to upload them. Note : If user selects not to upload Job level then Grade in designation csv will be uploaded. \r\n \r\n\r\n Information about buttons -> \r\n 1. Selenium Open -> Will open a new Google chrome window and maximize it automatically \r\n\r\n 2. Login & Admin -> User ID and Password added will be used to login and switch from employee's profile to Admin's \r\n\r\n  3. Upload Files  -> CSV exports from D -> Import files folder will be uploaded \r\n\r\n 4. Selenium close -> will close this program\r\n"
 
+# --------------------------------------------------- Added new root which represents Designation upload ---------------------------------------
+
 driver = None
+driver2 = None
 
-root  = tk.Tk()
-#new_root = tk.Tk()
+def on_close2():
 
-#Logo = resource_path("Logo.png")
-# Logo url -> share point public (vis for eve in org)
+    if driver2:
+        driver2.close()
 
-img = PhotoImage(file=resource_path_logo('/Img/Dbox4.png'))
+def Open_designation_window():
 
-Label(root,image=img,height=60).grid(sticky=NE,padx=15,pady=15)
+    global WebLink1
+    global username2
+    global password2
 
-root.title('Core_DCT')
-#width then hight
-root.geometry('995x670+150+150')
+    root3 = tk.Tk()
+    #root3 = Toplevel(root)
+    #root3 = Toplevel()
 
-#root['bg'] = '#5252ff'
-root['bg'] = '#F8FAFA'
+    root3.title('Core_DCT_designation')
+    #width then hight
+    root3.geometry('450x220+1260+150')
 
-# define font
-myFont = font.Font(family='Satisfy',size=9,weight='bold')
-myFont2 = font.Font(family='Playfair Display',size=9)
+    #root3['bg'] = '#5252ff'
+    root3['bg'] = '#F8FAFA'
 
-UserGCQuestion = messagebox.askyesno(title="Group company",message="Do you want to Add / update GC information?")
+    # define font
+    myFont2 = font.Font(family='Playfair Display',size=9)
+
+    tk.Label(root3,text="Client Instance / Website Link",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=1,column=1,padx=10,pady=5)
+    WebLink1 = StringVar()
+    name1 = tk.Entry(root3, textvariable=WebLink1,width=30,bg='#F5F5F5')
+    name1.grid(row=1,column=2,padx=5,pady=5)
+
+    tk.Label(root3,text="User ID / Email ID",activebackground='white',width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=2,column=1,padx=10,pady=3)
+    username2 = StringVar()
+    name2 = tk.Entry(root3, textvariable=username2,width=30,bg='#F5F5F5')
+    name2.grid(row=2,column=2,padx=5,pady=3)
+
+    tk.Label(root3,text="Password",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=3,column=1,padx=10,pady=3)
+    password2 = StringVar()
+    name3 = tk.Entry(root3, textvariable=password2,show="*",width=30,bg='#F5F5F5')
+    name3.grid(row=3,column=2,padx=5,pady=3)
+
+    tk.Button(root3, text='Upload Designation files', command=upload_files2,width=25,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black').grid(row=4,column=1,padx=10,pady=15,columnspan=2)
+
+    tk.Button(root3, text='Close Chrome Window', command=on_close2,width=25,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black').grid(row=5,column=1,padx=10,pady=5,columnspan=2)
+
+    tk.Label(root3,text="To add Designation, Designation Name and Designation Location ",width=60,bg='white',fg='black',font=myFont2).grid(row=6,column=1,padx=10,pady=3,columnspan=2)
+
+    root3.mainloop()
 
 
-if UserGCQuestion == True :
+def Main_root_window():
 
-    tk.Label(root,text="Client Instance / Website Link",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=3,column=1,padx=10,pady=5)
-    WebLink = StringVar()
-    name1 = tk.Entry(root, textvariable=WebLink,width=30,bg='#F5F5F5')
-    name1.grid(row=3,column=2,padx=5,pady=5)
-
-    tk.Label(root,text="User ID / Email ID",activebackground='white',width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=3,column=3,padx=10,pady=3)
-    username1 = StringVar()
-    name2 = tk.Entry(root, textvariable=username1,width=30,bg='#F5F5F5')
-    name2.grid(row=3,column=4,padx=5,pady=3)
-
-    tk.Label(root,text="Password",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=4,column=1,padx=10,pady=3)
-    password1 = StringVar()
-    name3 = tk.Entry(root, textvariable=password1,show="*",width=30,bg='#F5F5F5')
-    name3.grid(row=4,column=2,padx=5,pady=3)
-
-    tk.Label(root,text="GC Name",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=4,column=3,padx=10,pady=3)
-    GC_name = StringVar()
-    name4 = tk.Entry(root, textvariable=GC_name,width=30,bg='#F5F5F5')
-    name4.grid(row=4,column=4,padx=5,pady=3)
-
-    tk.Label(root,text="GC Shortname",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=5,column=1,padx=10,pady=3)
-    GC_shortName1 = StringVar()
-    name6 = tk.Entry(root, textvariable=GC_shortName1,width=30,bg='#F5F5F5')
-    name6.grid(row=5,column=2,padx=5,pady=3)
-
-    tk.Label(root,text="GC Country",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=5,column=3,padx=10,pady=3)
-    GC_country1 = StringVar()
-    name6 = tk.Entry(root, textvariable=GC_country1,width=30,bg='#F5F5F5')
-    name6.grid(row=5,column=4,padx=5,pady=3)
-
-    tk.Label(root,text="GC State",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=6,column=1,padx=10,pady=3)
-    GC_State1 = StringVar()
-    name7 = tk.Entry(root, textvariable=GC_State1,width=30,bg='#F5F5F5')
-    name7.grid(row=6,column=2,padx=5,pady=3)
-
-    tk.Label(root,text="GC City",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=6,column=3,padx=10,pady=3)
-    GC_city1 = StringVar()
-    name8 = tk.Entry(root, textvariable=GC_city1,width=30,bg="#F5F5F5")
-    name8.grid(row=6,column=4,padx=5,pady=3)
-
+    global WebLink
+    global username1
+    global password1
+    global CheckBox_Contribution1
+    global CheckBox_Contribution_var
+    global GC_city1
+    global GC_country1
+    global GC_name
+    global GC_shortName1
+    global GC_State1
+    global CheckBox_Joblevel_var
+    global UserGCQuestion
     
-else :
- 
-    tk.Label(root,text="Client Instance / Website Link",bg='#ADD8E6',fg='black').grid(row=3,column=1,padx=10,pady=10)
-    WebLink = StringVar()
-    name1 = tk.Entry(root, textvariable=WebLink,width=80,bg='#F5F5F5',font=myFont2)
-    name1.grid(row=3,column=2,padx=5,pady=10,columnspan=3)
+    root  = tk.Tk()
+    #new_root = tk.Tk()
 
-    tk.Label(root,text="User ID / Email ID",activebackground='white',width=20,bg='#ADD8E6',fg='black',font=myFont2).grid(row=4,column=1,padx=10,pady=5)
-    username1 = StringVar()
-    name2 = tk.Entry(root, textvariable=username1,width=28,bg='#F5F5F5')
-    name2.grid(row=4,column=2,padx=5,pady=10)
+    #Logo = resource_path("Logo.png")
+    # Logo url -> share point public (vis for eve in org)
 
-    tk.Label(root,text="Password",width=20,bg='#ADD8E6',fg='black',font=myFont2).grid(row=4,column=3,padx=10,pady=5)
-    password1 = StringVar()
-    name3 = tk.Entry(root, textvariable=password1,show="*",width=28,bg='#F5F5F5')
-    name3.grid(row=4,column=4,padx=5,pady=10)
-    
+    img = PhotoImage(file=resource_path_logo('/Img/Dbox4.png'))
 
-CheckBox_Contribution_var = IntVar()
-CheckBox_Contribution1 = tk.Checkbutton(root, text="Contribution Level, Applicable?", variable=CheckBox_Contribution_var, onvalue=1, offvalue=0,activebackground='blue',bg='#ADD8E6',fg='black',font=myFont2).grid(row=7,column=1,padx=10,pady=5,columnspan=2)
+    Label(root,image=img,height=60).grid(sticky=NE,padx=15,pady=15)
 
-CheckBox_Joblevel_var= IntVar()
-CheckBox_Job3 = tk.Checkbutton(root, text="Job Level, Applicable?", variable=CheckBox_Joblevel_var, onvalue=1, offvalue=0,activebackground='blue',bg='#ADD8E6',fg='black',font=myFont2).grid(row=7,column=3,padx=10,pady=5,columnspan=2)
+    root.title('Core_DCT')
+    #width then hight
+    root.geometry('995x670+150+150')
 
-b1 = tk.Label(root,text="(Note: Ensure you provide all the above inputs)",width=110,background='#F8FAFA',fg='black',font=myFont).grid(row=8,column=1,padx=10,pady=10,columnspan=4)
+    #root['bg'] = '#5252ff'
+    root['bg'] = '#F8FAFA'
 
-b2 = tk.Button(root, text='Select File', command=select_file,width=40,relief=RAISED,activebackground='Grey',background='#ADD8E6',fg='black',font=myFont2).grid(row=9,column=1,padx=10,pady=5,columnspan=4)
+    # define font
+    myFont = font.Font(family='Satisfy',size=9,weight='bold')
+    myFont2 = font.Font(family='Playfair Display',size=9)
 
-b10 = tk.Button(root, text='Check Errors', command=run_excel_macro_validation,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=10,column=1,padx=10,pady=5,columnspan=2)
-b11 = tk.Button(root, text='Show Validation Errors', command=EntireTree,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=10,column=3,padx=10,pady=5,columnspan=2)
-b12 = tk.Button(root, text='Resolve All Errors', command=run_validation_Allresolved_macro,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=11,column=1,padx=10,pady=10,columnspan=4)
-
-#Validate data button -> validation ->Error report
-
-b3 = tk.Button(root, text='Generate Core Master Imports', command=run_excel_macro,width=40,relief=RAISED,activebackground='Grey',background='#D3D3D3',fg='black',font=myFont2).grid(row=12,column=1,padx=10,pady=5,columnspan=4)
-
-b4 = tk.Label(root,text="",bg='#F8FAFA').grid(row=13,column=1,padx=10,pady=1,columnspan=4)
- 
-b5 = tk.Button(root, text='Chrome Open', command=on_open,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=14,column=1,padx=10,pady=5,columnspan=4)
-
-b6 = tk.Button(root, text='Login & Admin', command=UserLogin,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=15,column=1,padx=10,pady=5,columnspan=4)
-
-#b3 = tk.Button(root, text='Account details', command=GC_Details,width=40).grid(row=7,column=1,padx=10,pady=5,columnspan=3)
-
-b7 = tk.Button(root, text='Upload Files', command=Upload_file_1,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=16,column=1,padx=10,pady=5,columnspan=4)
-
-#b5 = tk.Button(root, text='Upload File_2', command=upload_file_2,width=40).grid(row=9,column=1,padx=10,pady=5,columnspan=3)
-
-b8 = tk.Button(root, text='Chrome Close', command=on_close,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=17,column=1,padx=10,pady=5,columnspan=4)
-
-b9 = tk.Button(root, text='Help', command=Help_window,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=18,column=1,padx=10,pady=15,columnspan=4)
+    UserGCQuestion = messagebox.askyesno(title="Group company",message="Do you want to Add / update GC information?")
 
 
+    if UserGCQuestion == True :
+
+        tk.Label(root,text="Client Instance / Website Link",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=3,column=1,padx=10,pady=5)
+        WebLink = StringVar()
+        name1 = tk.Entry(root, textvariable=WebLink,width=30,bg='#F5F5F5')
+        name1.grid(row=3,column=2,padx=5,pady=5)
+
+        tk.Label(root,text="User ID / Email ID",activebackground='white',width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=3,column=3,padx=10,pady=3)
+        username1 = StringVar()
+        name2 = tk.Entry(root, textvariable=username1,width=30,bg='#F5F5F5')
+        name2.grid(row=3,column=4,padx=5,pady=3)
+
+        tk.Label(root,text="Password",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=4,column=1,padx=10,pady=3)
+        password1 = StringVar()
+        name3 = tk.Entry(root, textvariable=password1,show="*",width=30,bg='#F5F5F5')
+        name3.grid(row=4,column=2,padx=5,pady=3)
+
+        tk.Label(root,text="GC Name",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=4,column=3,padx=10,pady=3)
+        GC_name = StringVar()
+        name4 = tk.Entry(root, textvariable=GC_name,width=30,bg='#F5F5F5')
+        name4.grid(row=4,column=4,padx=5,pady=3)
+
+        tk.Label(root,text="GC Shortname",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=5,column=1,padx=10,pady=3)
+        GC_shortName1 = StringVar()
+        name6 = tk.Entry(root, textvariable=GC_shortName1,width=30,bg='#F5F5F5')
+        name6.grid(row=5,column=2,padx=5,pady=3)
+
+        tk.Label(root,text="GC Country",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=5,column=3,padx=10,pady=3)
+        GC_country1 = StringVar()
+        name6 = tk.Entry(root, textvariable=GC_country1,width=30,bg='#F5F5F5')
+        name6.grid(row=5,column=4,padx=5,pady=3)
+
+        tk.Label(root,text="GC State",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=6,column=1,padx=10,pady=3)
+        GC_State1 = StringVar()
+        name7 = tk.Entry(root, textvariable=GC_State1,width=30,bg='#F5F5F5')
+        name7.grid(row=6,column=2,padx=5,pady=3)
+
+        tk.Label(root,text="GC City",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=6,column=3,padx=10,pady=3)
+        GC_city1 = StringVar()
+        name8 = tk.Entry(root, textvariable=GC_city1,width=30,bg="#F5F5F5")
+        name8.grid(row=6,column=4,padx=5,pady=3)
+
+        
+    else :
+
+        tk.Label(root,text="Client Instance / Website Link",bg='#ADD8E6',fg='black').grid(row=3,column=1,padx=10,pady=10)
+        WebLink = StringVar()
+        name1 = tk.Entry(root, textvariable=WebLink,width=80,bg='#F5F5F5',font=myFont2)
+        name1.grid(row=3,column=2,padx=5,pady=10,columnspan=3)
+
+        tk.Label(root,text="User ID / Email ID",activebackground='white',width=20,bg='#ADD8E6',fg='black',font=myFont2).grid(row=4,column=1,padx=10,pady=5)
+        username1 = StringVar()
+        name2 = tk.Entry(root, textvariable=username1,width=28,bg='#F5F5F5')
+        name2.grid(row=4,column=2,padx=5,pady=10)
+
+        tk.Label(root,text="Password",width=20,bg='#ADD8E6',fg='black',font=myFont2).grid(row=4,column=3,padx=10,pady=5)
+        password1 = StringVar()
+        name3 = tk.Entry(root, textvariable=password1,show="*",width=28,bg='#F5F5F5')
+        name3.grid(row=4,column=4,padx=5,pady=10)
 
 
-root.mainloop()
+    CheckBox_Contribution_var = IntVar()
+    CheckBox_Contribution1 = tk.Checkbutton(root, text="Contribution Level, Applicable?", variable=CheckBox_Contribution_var, onvalue=1, offvalue=0,activebackground='blue',bg='#ADD8E6',fg='black',font=myFont2).grid(row=7,column=1,padx=10,pady=5,columnspan=2)
 
+    CheckBox_Joblevel_var= IntVar()
+    CheckBox_Job3 = tk.Checkbutton(root, text="Job Level, Applicable?", variable=CheckBox_Joblevel_var, onvalue=1, offvalue=0,activebackground='blue',bg='#ADD8E6',fg='black',font=myFont2).grid(row=7,column=3,padx=10,pady=5,columnspan=2)
+
+    b1 = tk.Label(root,text="(Note: Ensure you provide all the required inputs)",width=110,background='#F8FAFA',fg='black',font=myFont).grid(row=8,column=1,padx=10,pady=10,columnspan=4)
+
+    b2 = tk.Button(root, text='01. Select File', command=select_file,width=40,relief=RAISED,activebackground='Grey',background='#ADD8E6',fg='black',font=myFont2).grid(row=9,column=1,padx=10,pady=5,columnspan=4)
+
+    b11 = tk.Button(root, text='02. Check Errors', command=run_excel_macro_validation,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=10,column=1,padx=10,pady=5,columnspan=2)
+    b12 = tk.Button(root, text='03. Show Validation Errors', command=EntireTree,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=10,column=3,padx=10,pady=5,columnspan=2)
+    b13 = tk.Button(root, text='04. Resolve All Errors', command=run_validation_Allresolved_macro,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=11,column=1,padx=10,pady=10,columnspan=4)
+
+    #Validate data button -> validation ->Error report
+
+    b3 = tk.Button(root, text='05. Generate Core Master Imports', command=run_excel_macro,width=40,relief=RAISED,activebackground='Grey',background='#ADD8E6',fg='black',font=myFont2).grid(row=12,column=1,padx=10,pady=5,columnspan=4)
+
+    b4 = tk.Label(root,text="",bg='#F8FAFA').grid(row=13,column=1,padx=10,pady=1,columnspan=4)
+
+    b5 = tk.Button(root, text='06. Chrome Open', command=on_open,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=14,column=1,padx=10,pady=5,columnspan=4)
+
+    b6 = tk.Button(root, text='07. Login & Admin', command=UserLogin,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=15,column=1,padx=10,pady=5,columnspan=4)
+
+    #b3 = tk.Button(root, text='Account details', command=GC_Details,width=40).grid(row=7,column=1,padx=10,pady=5,columnspan=3)
+
+    #b7 = tk.Button(root, text='08. Upload Designation', command=Open_designation_window,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=16,column=1,padx=10,pady=5,columnspan=2)
+
+    b8 = tk.Button(root, text='08. Upload Files', command=Upload_file_1,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=16,column=1,padx=10,pady=5,columnspan=4)
+
+    #b5 = tk.Button(root, text='Upload File_2', command=upload_file_2,width=40).grid(row=9,column=1,padx=10,pady=5,columnspan=3)
+
+    b9 = tk.Button(root, text='09. Chrome Close', command=on_close,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=17,column=1,padx=10,pady=5,columnspan=4)
+
+    b10 = tk.Button(root, text='10. Help', command=Help_window,width=40,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black',font=myFont2).grid(row=18,column=1,padx=10,pady=15,columnspan=4)
+
+    #root3 = tk.Tk()
+
+    root.mainloop()
 
 
