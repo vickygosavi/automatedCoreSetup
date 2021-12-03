@@ -125,29 +125,37 @@ def select_file():
 def run_excel_macro_validation():
     
     '''To run validation macro'''
-        
-    try:
-        xl_app = xw.App(visible=False, add_book=False)
-        wb = xl_app.books.open(filename1)
+    message_for_validation_macro = "Please note that the functioning of this macro depends upon the number of employees present in the Master sheet of DCT template.\r\n\r\nIt's recommended that you use the excel file to run the macros if 'number' (data) of employees are higher.\r\n\r\nProceed further ?"
 
-        #To check errors
-        run_macro1 = wb.app.macro('CheckErrors.CheckforErrors') 
+    
+    User_validation_opinion=messagebox.askyesno(title="Validation Macro",message=message_for_validation_macro)
 
-        #To generate Err report
-        run_macro2 = wb.app.macro('Error_Report.Error_Report') 
+    if User_validation_opinion == True:
 
-        run_macro1()
-        run_macro2()
+        try:
+            xl_app = xw.App(visible=False, add_book=False)
+            wb = xl_app.books.open(filename1)
 
-        wb.save()
-        wb.close()
+            #To check errors
+            run_macro1 = wb.app.macro('CheckErrors.CheckforErrors') 
 
-        xl_app.quit()
+            #To generate Err report
+            run_macro2 = wb.app.macro('Error_Report.Error_Report') 
 
-    except Exception as ex:
-        template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-        message = template.format(type(ex).__name__, ex.args)
-        print(message)
+            run_macro1()
+            run_macro2()
+
+            wb.save()
+            wb.close()
+
+            xl_app.quit()
+
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            print(message)
+    else:
+        pass
         
 
 
@@ -559,58 +567,6 @@ def Upload_file_1():
     except:
         pass
 
-    # Grade
-
-    try:
-        driver.get(WebLink.get() + '/Importnewclient/grade')
-        driver.find_element_by_xpath('//*[@id="csvdata"]').send_keys(Grade_upload)
-        driver.implicitly_wait(20)
-        element = wait.until(EC.element_to_be_clickable(((By.NAME,'upload'))))
-        time.sleep(4)
-        driver.find_element_by_xpath('/html/body/div[2]/div/section/div[1]/div[1]/div/div/form/input[2]').click()
-        #driver.find_element_by_name('upload').click()
-        driver.implicitly_wait(20)
-
-    except:
-        pass
-
-    # Contribution level
-    # If user selects to add contribution level then this will run
-    # is_selected will check if the checkbox is already 'checked' else will go ahead and select the option
-
-    if CheckBox_Contribution_var.get() == 1:
-
-        try:
-            driver.get(WebLink.get() + '/settings/employees/tenprofzz')
-            driver.execute_script("window.scrollTo(0, 1600)") 
-            time.sleep(4)
-
-            if driver.find_element_by_id("TenantProfile_neev_level_allowed").is_selected() == False:
-                time.sleep(4)
-                driver.find_element_by_id("TenantProfile_neev_level_allowed").click()
-                driver.execute_script("window.scrollTo(0, -500)")
-                time.sleep(4)
-
-                driver.find_element_by_xpath("/html/body/div[2]/div/section/div/div/div/form/div[2]/div/input").click()
-                time.sleep(4)
-            
-            else:
-                pass
-
-            driver.get(WebLink.get() + '/Importnewclient/contributionLevel')
-            driver.find_element_by_xpath('//*[@id="csvdata"]').send_keys(Contrib_level)
-            driver.implicitly_wait(20)
-            element = wait.until(EC.element_to_be_clickable(((By.NAME,'upload'))))
-            time.sleep(4)
-            driver.find_element_by_xpath('/html/body/div[2]/div/section/div[1]/div[1]/div/div/form/input[2]').click()
-            #driver.find_element_by_name('upload').click()
-            driver.implicitly_wait(20)
-
-        except:
-            pass
-
-    else:
-        pass
 
     # Business unit
 
@@ -708,65 +664,6 @@ def Upload_file_1():
     except:
         pass
 
-    # Job level
-
-    if CheckBox_Joblevel_var == 1:
-
-        try:
-
-            driver.get(WebLink.get() + '/Importnewclient/jobLevel')
-            time.sleep(3)
-            driver.find_element_by_xpath('//*[@id="csvdata"]').send_keys(JobLevel_upload)
-            driver.implicitly_wait(20)
-            element = wait.until(EC.element_to_be_clickable(((By.NAME,'upload'))))
-            time.sleep(4)
-            driver.find_element_by_xpath('//*[@id="upload_import_file"]/div/input').click()
-            #driver.find_element_by_name('upload').click()
-            driver.implicitly_wait(20)
-
-        except:
-            pass
-
-    else:
-
-        try:
-
-            driver.get(WebLink.get() + '/import/gradeimport')
-            time.sleep(3)
-            driver.find_element_by_xpath('//*[@id="upload_file[]"]').send_keys(Grade_in_designation)
-            driver.implicitly_wait(20)
-
-            driver.find_element_by_xpath('//*[@id="has_header_fields"]').click()
-
-            element = wait.until(EC.element_to_be_clickable(((By.NAME,'upload'))))
-            time.sleep(4)
-            driver.find_element_by_xpath('/html/body/div[2]/div/section/div[2]/div[1]/div/div/div[6]/form/div/input').click()
-            #driver.find_element_by_name('upload').click()
-            driver.implicitly_wait(20)
-
-            
-            driver.find_element_by_xpath('/html/body/div[2]/div/section/div[2]/div/div/div/div[9]/div[2]/div[5]/div/table/thead/tr/th[1]/select').send_keys('Designation Code')
-            driver.implicitly_wait(20)
-            driver.find_element_by_xpath('/html/body/div[2]/div/section/div[2]/div/div/div/div[9]/div[2]/div[5]/div/table/thead/tr/th[2]/select').send_keys('Grade')
-            driver.implicitly_wait(20)
-
-            time.sleep(3)
-
-            driver.find_element_by_xpath('/html/body/div[2]/div/section/div[2]/div/div/div/div[6]/form/div/input').click()
-            time.sleep(3)
-
-            try:
-                driver.execute_script("window.scrollTo(0, 300)") 
-                driver.find_element_by_xpath('/html/body/div[2]/div/section/div[2]/div[4]/input[1]').click()
-                time.sleep(3)
-            except:
-                pass
-
-
-        except:
-            pass
-
-
     # Functional area
     
     try:
@@ -848,131 +745,6 @@ def Upload_file_1():
     except:
         pass
 
-def upload_files2():
-
-    # ------------ Using driver2 to open Designation's import window parallely -------------
-    # Adding Login & admin code here again so that driver2 can access the designation page as an admin
-    # Adding 15 mins wait and later 
-    #Designation
-
-    global driver2
-
-    wait = WebDriverWait(driver, 30)
-    driver2 = selenium.webdriver.Chrome(resource_path1("/driver/chromedriver.exe"))
-
-    driver2.maximize_window()
-    url = WebLink1.get()
-    driver2.get(url)
-          
-    try:
-    # Admin's login
-        driver2.find_element_by_id("UserLogin_username").send_keys(username2.get())
-        driver2.find_element_by_id("UserLogin_password").send_keys(password2.get())
-        driver2.find_element_by_id("login-submit").click()
-        driver2.implicitly_wait(10)
-    except:
-        pass
-    
-
-    # How are you feeling today?
-
-    try:
-        driver2.find_element_by_xpath('//*[@id="pulse_form"]/div/div/div')
-        driver2.find_element_by_xpath('//*[@id="5"]').click()
-        driver2.find_element_by_xpath('//*[@id="plus-status-btn"]').click()
-    except:
-        pass
-
-    #Click on the user's profile pic and switch to admin
-    driver2.find_element_by_xpath('//*[@id="dasboard-bigheader"]/header/div[4]/ul/li[3]/div/div/img').click()
-    driver2.find_element_by_xpath('//*[@id="dasboard-bigheader"]/header/div[4]/ul/li[3]/div/ul/li[2]/a').click()
-    driver2.implicitly_wait(30)
-
-    time.sleep(5)
-
-    # Designation 
-    try:
-        driver2.get(WebLink1.get() + '/import/asyncImports/type/designation')
-        driver2.find_element_by_xpath('//*[@id="upload_file[]"]').send_keys(Designation)
-        
-        driver2.implicitly_wait(20)
-        
-        
-        time.sleep(4)
-        driver2.find_element_by_xpath('//*[@id="upload_import_file"]/div/input').click()
-    
-        #driver2.find_element_by_name('upload').click()
-        driver2.implicitly_wait(20)
-    except:
-        pass
-
-    
-
-    #code to select from Deignation's drop down
-
-    try:
-
-        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[1]/td[1]/select').send_keys(Dept)
-        driver2.implicitly_wait(3)
-        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[2]/td[1]/select').send_keys(Desg)
-        driver2.implicitly_wait(3)
-        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[3]/td[1]/select').send_keys(Desg_code)
-        driver2.implicitly_wait(3)
-        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[4]/td[1]/select').send_keys(Numb_of_position)
-        driver2.implicitly_wait(3)
-        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[8]/td[1]/select').send_keys(Not_period)
-        driver2.implicitly_wait(3)
-        driver2.find_element_by_xpath('/html/body/div[4]/div/div[2]/table/tbody/tr[10]/td[1]/select').send_keys(Funct_area)
-        time.sleep(2)
-
-        driver2.execute_script("window.scrollTo(0, -500)") 
-        time.sleep(5)
-
-        driver2.find_element_by_xpath('//*[@id="col_map"]/div/input').click()
-
-        messagebox.showinfo("Wait for 15 mins","Please do not close the chrome browser, executable is waiting for the designation to be saved (15mins pause)\r\n\r\nChrome window will get minimized automatically and after 15 mins of wait it will be maximised and then remaining CSVs will be uploaded.")
-
-        # messagebox.showinfo("Please wait","By "+start_min1.time()+" this will be uploaded on the instance Please do not close the chrome browser, \r\n\r\nChrome window will get minimized automatically and at"+start_min1.time() + " it will be maximised and then remaining CSVs will be uploaded.")
-
-        driver2.minimize_window()
-
-        time.sleep(960)
-
-        driver2.maximize_window()
-
-        time.sleep(5)
-
-    except:
-        pass
-
-    # Designation Name
-
-    try:
-
-        driver2.get(WebLink1.get() + '/import/asyncImports/type/designationname')
-        driver2.find_element_by_xpath('//*[@id="upload_file[]"]').send_keys(Designation_name)
-        driver2.implicitly_wait(20)
-        time.sleep(4)
-        driver2.find_element_by_xpath('//*[@id="upload_import_file"]/div/input').click()
-        #driver2.find_element_by_name('upload').click()
-        driver2.implicitly_wait(20)
-
-    except:
-        pass
-
-    # Designation Location
-
-    try:
-
-        time.sleep(4)
-        driver2.get(WebLink1.get() + '/import/designationLocation')
-        driver2.find_element_by_xpath('//*[@id="csvdata"]').send_keys(Designation_loc)
-        time.sleep(4)
-        driver2.implicitly_wait(20)
-    #   element = wait.until(EC.element_to_be_clickable(((By.NAME,'upload')))) --- not required as this page doesnt have a submit or next button present
-
-    except:
-        pass
 
 
 
@@ -990,56 +762,6 @@ InfoForTHeUser ="Please make sure that you have used the Automated DCT to take t
 # --------------------------------------------------- Added new root which represents Designation upload ---------------------------------------
 
 driver = None
-driver2 = None
-
-def on_close2():
-
-    if driver2:
-        driver2.close()
-
-def Open_designation_window():
-
-    global WebLink1
-    global username2
-    global password2
-
-    root3 = tk.Tk()
-    #root3 = Toplevel(root)
-    #root3 = Toplevel()
-
-    root3.title('Core_DCT_designation')
-    #width then hight
-    root3.geometry('450x220+1260+150')
-
-    #root3['bg'] = '#5252ff'
-    root3['bg'] = '#F8FAFA'
-
-    # define font
-    myFont2 = font.Font(family='Playfair Display',size=9)
-
-    tk.Label(root3,text="Client Instance / Website Link",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=1,column=1,padx=10,pady=5)
-    WebLink1 = StringVar()
-    name1 = tk.Entry(root3, textvariable=WebLink1,width=30,bg='#F5F5F5')
-    name1.grid(row=1,column=2,padx=5,pady=5)
-
-    tk.Label(root3,text="User ID / Email ID",activebackground='white',width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=2,column=1,padx=10,pady=3)
-    username2 = StringVar()
-    name2 = tk.Entry(root3, textvariable=username2,width=30,bg='#F5F5F5')
-    name2.grid(row=2,column=2,padx=5,pady=3)
-
-    tk.Label(root3,text="Password",width=25,bg='#ADD8E6',fg='black',font=myFont2).grid(row=3,column=1,padx=10,pady=3)
-    password2 = StringVar()
-    name3 = tk.Entry(root3, textvariable=password2,show="*",width=30,bg='#F5F5F5')
-    name3.grid(row=3,column=2,padx=5,pady=3)
-
-    tk.Button(root3, text='Upload Designation files', command=upload_files2,width=25,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black').grid(row=4,column=1,padx=10,pady=15,columnspan=2)
-
-    tk.Button(root3, text='Close Chrome Window', command=on_close2,width=25,relief=RAISED,activebackground='Grey',bg='#ADD8E6',fg='black').grid(row=5,column=1,padx=10,pady=5,columnspan=2)
-
-    tk.Label(root3,text="To add Designation, Designation Name and Designation Location ",width=60,bg='white',fg='black',font=myFont2).grid(row=6,column=1,padx=10,pady=3,columnspan=2)
-
-    root3.mainloop()
-
 
 def Main_root_window():
 
@@ -1068,7 +790,7 @@ def Main_root_window():
 
     root.title('Core_DCT')
     #width then hight
-    root.geometry('995x670+150+150')
+    root.geometry('995x640+150+150')
 
     #root['bg'] = '#5252ff'
     root['bg'] = '#F8FAFA'
@@ -1140,12 +862,6 @@ def Main_root_window():
         name3 = tk.Entry(root, textvariable=password1,show="*",width=28,bg='#F5F5F5')
         name3.grid(row=4,column=4,padx=5,pady=10)
 
-
-    CheckBox_Contribution_var = IntVar()
-    CheckBox_Contribution1 = tk.Checkbutton(root, text="Contribution Level, Applicable?", variable=CheckBox_Contribution_var, onvalue=1, offvalue=0,activebackground='blue',bg='#ADD8E6',fg='black',font=myFont2).grid(row=7,column=1,padx=10,pady=5,columnspan=2)
-
-    CheckBox_Joblevel_var= IntVar()
-    CheckBox_Job3 = tk.Checkbutton(root, text="Job Level, Applicable?", variable=CheckBox_Joblevel_var, onvalue=1, offvalue=0,activebackground='blue',bg='#ADD8E6',fg='black',font=myFont2).grid(row=7,column=3,padx=10,pady=5,columnspan=2)
 
     b1 = tk.Label(root,text="(Note: Ensure you provide all the required inputs)",width=110,background='#F8FAFA',fg='black',font=myFont).grid(row=8,column=1,padx=10,pady=10,columnspan=4)
 
